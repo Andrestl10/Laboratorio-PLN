@@ -1,4 +1,10 @@
+import os
+import warnings
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+warnings.filterwarnings("ignore")
+
 import pandas as pd
+import pickle
 import mlflow
 import mlflow.sklearn
 from sklearn.model_selection import train_test_split
@@ -10,49 +16,60 @@ from sklearn.pipeline import Pipeline
 def main():
     mlflow.set_tracking_uri("http://ec2-3-95-197-233.compute-1.amazonaws.com:5000/")
     mlflow.set_experiment("baseline_tfidf_lr")
-    
-    csv_path = r"c:\Users\andre\Documents\Laboratorio-PLN\data\imdb_clean.csv"
+
+    csv_path = "/home/johan/Laboratorio-PLN/data/imdb_clean.csv"
     print(f"Loading data from {csv_path}...")
     df = pd.read_csv(csv_path)
-    
-    # Check for NaN values in review_clean
     df = df.dropna(subset=['review_clean', 'sentiment'])
-    
+
     X = df['review_clean']
     y = df['sentiment']
-    
+
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    
-    with mlflow.start_run():
+
+    with mlflow.start_run(run_name="baseline_tfidf_logistic_regression"):
         mlflow.set_tag("username", "johani")
-        
+        mlflow.set_tag("step", "1_baseline")
+
         # Define pipeline
         pipeline = Pipeline([
             ('tfidf', TfidfVectorizer(max_features=5000)),
             ('clf', LogisticRegression(random_state=42, max_iter=1000))
         ])
-        
+
         print("Training model...")
         pipeline.fit(X_train, y_train)
-        
+
         print("Evaluating model...")
         y_pred = pipeline.predict(X_test)
-        
+
         accuracy = accuracy_score(y_test, y_pred)
         f1 = f1_score(y_test, y_pred, average='weighted')
-        print(f"Accuracy: {accuracy}")
-        print(f"F1 Score (weighted): {f1}")  
+
+        print(f"Accuracy : {accuracy:.4f}")
+        print(f"F1 Score : {f1:.4f}")
+
+        # Log métricas
         mlflow.log_metric("f1_score", f1)
         mlflow.log_metric("accuracy", accuracy)
-        
-        # Log parameters
+
+        # Log parámetros
         mlflow.log_param("model", "LogisticRegression")
         mlflow.log_param("vectorizer", "TF-IDF")
         mlflow.log_param("max_features", 5000)
-        
-        # Log model
+        mlflow.log_param("max_iter", 1000)
+        mlflow.log_param("random_state", 42)
+
+        # Guardar y subir el .pkl como artefacto
+        pkl_path = "baseline_pipeline.pkl"
+        with open(pkl_path, "wb") as f:
+            pickle.dump(pipeline, f)
+        mlflow.log_artifact(pkl_path)
+        print(f"Pipeline guardado y subido como artefacto: {pkl_path}")
+
+        # Log modelo (para poder cargarlo con mlflow.sklearn.load_model)
         mlflow.sklearn.log_model(pipeline, "model")
         print("Model logged to MLflow successfully.")
 
-if __name__ == "__main__":   
+if __name__ == "__main__":
     main()
