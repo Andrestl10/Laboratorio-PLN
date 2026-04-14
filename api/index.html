@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de Reviews IMDB</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f5f5f0;
+            color: #1a1a1a;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            border: 0.5px solid #ddd;
+            padding: 2.5rem;
+            max-width: 780px;
+            width: 100%;
+        }
+        h1 {
+            font-size: 22px;
+            font-weight: 500;
+            margin-bottom: 0.4rem;
+        }
+        .subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+        h2 {
+            font-size: 16px;
+            font-weight: 500;
+            margin: 1.5rem 0 0.75rem;
+        }
+        p {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #333;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin: 1rem 0;
+        }
+        .metric-card {
+            background: #f5f5f0;
+            border-radius: 10px;
+            padding: 1rem;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 4px;
+        }
+        .metric-value {
+            font-size: 22px;
+            font-weight: 500;
+        }
+        .metric-name {
+            font-size: 13px;
+            color: #555;
+            margin-top: 4px;
+        }
+        .best { color: #0f6e56; }
+        .table-wrap { overflow-x: auto; margin: 1rem 0; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th {
+            text-align: left;
+            padding: 8px 12px;
+            background: #f5f5f0;
+            font-weight: 500;
+            color: #555;
+            font-size: 12px;
+        }
+        td { padding: 8px 12px; border-bottom: 0.5px solid #eee; }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+        .badge-best { background: #e1f5ee; color: #085041; }
+        .badge-mid  { background: #e6f1fb; color: #0c447c; }
+        .badge-low  { background: #faeeda; color: #633806; }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            margin-top: 2rem;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #333; }
+        .divider { border: none; border-top: 0.5px solid #eee; margin: 1.5rem 0; }
+        .tag {
+            display: inline-block;
+            background: #f0f0eb;
+            border-radius: 6px;
+            padding: 2px 8px;
+            font-size: 12px;
+            color: #555;
+            margin-right: 6px;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>Análisis de sentimientos — IMDB Movie Reviews</h1>
+    <p class="subtitle">Laboratorio PLN</p>
+
+    <p>Se entrenaron y compararon 7 modelos para clasificar reseñas de películas como positivas o negativas. El criterio principal de evaluación fue el <strong>F1 Score (weighted)</strong>.</p>
+
+    <h2>¿Por qué el baseline fue el mejor modelo?</h2>
+    <p>El modelo TF-IDF + Regresión Logística obtuvo el mejor F1 Score entre todos los experimentos. Esto se explica porque el dataset IMDB en español tiene un vocabulario relativamente estable y las reseñas contienen palabras clave muy discriminativas (como "excelente", "terrible", "aburrida"). TF-IDF captura exactamente estas señales léxicas sin necesidad de representaciones semánticas complejas. Las redes neuronales con embeddings requieren más datos y más épocas para superar esta ventaja en tareas donde el léxico es suficientemente informativo.</p>
+
+    <hr class="divider">
+
+    <h2>Resultados de todos los experimentos</h2>
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-label">Mejor F1 Score</div>
+            <div class="metric-value best">0.8559</div>
+            <div class="metric-name">TF-IDF + Logistic Regression</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Total experimentos</div>
+            <div class="metric-value">7</div>
+            <div class="metric-name">registrados en MLflow</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Embeddings evaluados</div>
+            <div class="metric-value">3</div>
+            <div class="metric-name">spaCy · Word2Vec · GloVe</div>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Modelo</th>
+                    <th>Embedding</th>
+                    <th>F1 Score</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>TF-IDF + Logistic Regression</td>
+                    <td><span class="tag">baseline</span></td>
+                    <td>0.8559</td>
+                    <td><span class="badge badge-best">mejor</span></td>
+                </tr>
+                <tr>
+                    <td>Red neuronal</td>
+                    <td><span class="tag">entrenable</span></td>
+                    <td>0.8508</td>
+                    <td><span class="badge badge-mid">bueno</span></td>
+                </tr>
+                <tr>
+                    <td>Word2Vec</td>
+                    <td><span class="tag">ajustable</span></td>
+                    <td>0.8487</td>
+                    <td><span class="badge badge-mid">bueno</span></td>
+                </tr>
+                <tr>
+                    <td>Word2Vec</td>
+                    <td><span class="tag">congelado</span></td>
+                    <td>0.8430</td>
+                    <td><span class="badge badge-mid">bueno</span></td>
+                </tr>
+                <tr>
+                    <td>GloVe</td>
+                    <td><span class="tag">ajustable</span></td>
+                    <td>0.8365</td>
+                    <td><span class="badge badge-mid">bueno</span></td>
+                </tr>
+                <tr>
+                    <td>spaCy</td>
+                    <td><span class="tag">ajustable</span></td>
+                    <td>0.8117</td>
+                    <td><span class="badge badge-low">regular</span></td>
+                </tr>
+                <tr>
+                    <td>GloVe</td>
+                    <td><span class="tag">congelado</span></td>
+                    <td>0.6780</td>
+                    <td><span class="badge badge-low">regular</span></td>
+                </tr>
+                <tr>
+                    <td>spaCy</td>
+                    <td><span class="tag">congelado</span></td>
+                    <td>0.3291</td>
+                    <td><span class="badge badge-low">bajo</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <hr class="divider">
+
+    <p>El modelo seleccionado para producción es el <strong>baseline TF-IDF + Logistic Regression</strong>. Todos los experimentos, parámetros, métricas y artefactos están disponibles en MLflow.</p>
+
+    <a class="btn" href="http://ec2-3-94-210-185.compute-1.amazonaws.com:5000/#/experiments/6/runs/58d6a8bbcf6042ff81c443e3b5ad2491" target="_blank">
+        Ver corrida del mejor modelo en MLflow →
+    </a>
+</div>
+</body>
+</html>
